@@ -6,6 +6,8 @@ import bz2
 import xml.etree.cElementTree as ET
 from xml.sax.saxutils import unescape
 
+from tqdm import tqdm
+
 nsmap = {"xmlns" : "http://www.mediawiki.org/xml/export-0.10/"}
 link_re = re.compile("(?:\\[\\[)(.+?)(?:[\\]|#])")
 
@@ -24,14 +26,13 @@ def parse_page(page, out_f):
             out_f.write(json.dumps({"type" : "page", "title" : title, "length" : len(text), "links" : links}) + "\n")
 
 def xml2json(infile, outfile, max_pages):
+    print("running xml2json...")
     npages = 0
-
-    begin_time = time.perf_counter()
-    last_output_time = time.perf_counter()
-
     with bz2.open(infile, "r") as wiki_f, open(outfile, "x") as out_f:
         tree = ET.iterparse(wiki_f, events=["start", "end"])
         _, root = next(tree)
+
+        progress = tqdm(unit="pages")
 
         page_tag = "{{{xmlns}}}page".format(**nsmap)
         for (event, elem) in tree:
@@ -39,11 +40,7 @@ def xml2json(infile, outfile, max_pages):
                 parse_page(elem, out_f)
                 root.remove(elem)
                 npages = npages + 1
-            if (time.perf_counter() - last_output_time) > 1.0:
-                rate = npages / (time.perf_counter() - begin_time)
-                last_output_time = time.perf_counter()
-                print("\rprocessed {:d} pages ({:0.1f} pages per second)".format(npages, rate), end="")
+                progress.update()
             if npages == max_pages: break
-
-    print("\r" + " "*100, end="") # clear line
-    print("\rprocessed {:d} pages in {:0.1f} seconds".format(npages, time.perf_counter() - begin_time))
+    progress.close()
+    print("done")

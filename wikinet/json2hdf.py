@@ -3,11 +3,14 @@
 import json
 import re
 import time
+import os
 
 from collections import namedtuple
 
 import numpy as np
 import h5py
+
+from tqdm import tqdm
 
 filter_title_re = re.compile("(?:Wikipedia:|:?Category:|:?File:|Media:|:?Image:|:?Template:|Draft:|Portal:|Module:|TimedText:|MediaWiki:|Help:)")
 
@@ -15,15 +18,14 @@ Page = namedtuple("Page", ["title", "length"])
 
 def parse_titles(infile):
     print("reading titles...")
-    begin_time = time.perf_counter()
-    last_output_time = begin_time
-
     redirects = {}
     pages = []
 
-    with open(infile, "r") as f:
+    progress = tqdm(total=os.path.getsize(infile), unit="bytes")
+    with open(infile, "rb") as f:
         for n, line in enumerate(f):
-            data = json.loads(line)
+            progress.update(len(line))
+            data = json.loads(line.decode())
             if data["type"] == "redirect":
                 src, dest = data["src"], data["dest"]
                 redirects[src] = dest
@@ -33,10 +35,7 @@ def parse_titles(infile):
                     pages.append(Page(title, length))
             else: assert False
 
-            if (time.perf_counter() - last_output_time) > 1.0:
-                rate = n / (time.perf_counter() - begin_time)
-                last_output_time = time.perf_counter()
-                print("\rprocessed {:d} pages ({:0.1f} pages per second)".format(n, rate), end="")
+    progress.close()
 
     title_idx_map = {}
     for i, p in enumerate(pages):
@@ -46,14 +45,10 @@ def parse_titles(infile):
         if dest in title_idx_map and src not in title_idx_map:
             title_idx_map[src] = title_idx_map[dest]
 
-    print("\ndone")
-
     return pages, title_idx_map
 
 def parse_links(infile, pages, title_idx_map):
     print("reading links...")
-    begin_time = time.perf_counter()
-    last_output_time = begin_time
 
     adjacency_list = [[] for _ in range(len(pages))]
 
@@ -62,9 +57,11 @@ def parse_links(infile, pages, title_idx_map):
         if len(link) == 1: return link
         return link[0].upper() + link[1:]
 
-    with open(infile, "r") as f:
+    progress = tqdm(total=os.path.getsize(infile), unit="bytes")
+    with open(infile, "rb") as f:
         for n, line in enumerate(f):
-            data = json.loads(line)
+            progress.update(len(line))
+            data = json.loads(line.decode())
             if data["type"] == "page":
                 title = data["title"]
                 if title in title_idx_map:
@@ -77,13 +74,7 @@ def parse_links(infile, pages, title_idx_map):
 
                     for j in links:
                         adjacency_list[i].append(j)
-
-            if (time.perf_counter() - last_output_time) > 1.0:
-                rate = n / (time.perf_counter() - begin_time)
-                last_output_time = time.perf_counter()
-                print("\rprocessed {:d} pages ({:0.1f} pages per second)".format(n, rate), end="")
-
-    print("\ndone")
+    progress.close()
 
     return adjacency_list
 
@@ -109,13 +100,13 @@ def write_graph(outfile, pages, adjacency_list):
         f["/graph/adjacency/csr/IA"] = IA
         f["/graph/adjacency/csr/JA"] = JA
 
-    print("done")
-
 def json2graph(infile):
     pages, title_idx_map = parse_titles(infile)
     adjacency_list = parse_links(infile, pages, title_idx_map)
     return pages, adjacency_list
 
 def json2hdf(infile, outfile):
+    print("running json2hdf...")
     pages, adjacency_list = json2graph(infile)
     write_graph(outfile, pages, adjacency_list)
+    print("done")
