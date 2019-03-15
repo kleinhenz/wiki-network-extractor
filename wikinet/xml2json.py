@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-
-import argparse
 import json
 import re
 import time
@@ -26,13 +23,13 @@ def parse_page(page, out_f):
             links = [unescape(m.group(1)) for m in link_re.finditer(text)]
             out_f.write(json.dumps({"type" : "page", "title" : title, "length" : len(text), "links" : links}) + "\n")
 
-def parse_wikidump(wiki, output, max_pages):
+def xml2json(infile, outfile, max_pages):
     npages = 0
 
     begin_time = time.perf_counter()
     last_output_time = time.perf_counter()
 
-    with bz2.open(wiki, "r") as wiki_f, open(output, "x") as out_f:
+    with bz2.open(infile, "r") as wiki_f, open(outfile, "x") as out_f:
         tree = ET.iterparse(wiki_f, events=["start", "end"])
         _, root = next(tree)
 
@@ -50,15 +47,3 @@ def parse_wikidump(wiki, output, max_pages):
 
     print("\r" + " "*100, end="") # clear line
     print("\rprocessed {:d} pages in {:0.1f} seconds".format(npages, time.perf_counter() - begin_time))
-
-def main():
-    parser = argparse.ArgumentParser(description="parse wiki xml dump and output newline delimited json containing only links/redirects")
-    parser.add_argument("wiki", help="wiki xml dump to parse")
-    parser.add_argument("output", help="output file")
-    parser.add_argument("-n", type=int, help="only parse first n pages")
-
-    args = parser.parse_args()
-    parse_wikidump(args.wiki, args.output, args.n)
-
-if __name__ == "__main__":
-    main()

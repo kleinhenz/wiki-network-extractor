@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
 import json
 import re
 import time
@@ -88,11 +87,6 @@ def parse_links(infile, pages, title_idx_map):
 
     return adjacency_list
 
-def json2graph(infile):
-    pages, title_idx_map = parse_titles(infile)
-    adjacency_list = parse_links(infile, pages, title_idx_map)
-    return pages, adjacency_list
-
 def write_graph(outfile, pages, adjacency_list):
     assert len(pages) == len(adjacency_list)
     print("writing output...")
@@ -117,14 +111,11 @@ def write_graph(outfile, pages, adjacency_list):
 
     print("done")
 
-def main():
-    parser = argparse.ArgumentParser(description="parse data emitted by xml2json.py and output adjacency matrix")
-    parser.add_argument("infile", help="data to parse")
-    parser.add_argument("output", help="output file")
-    args = parser.parse_args()
+def json2graph(infile):
+    pages, title_idx_map = parse_titles(infile)
+    adjacency_list = parse_links(infile, pages, title_idx_map)
+    return pages, adjacency_list
 
-    pages, adjacency_list = json2graph(args.infile)
-    write_graph(args.output, pages, adjacency_list)
-
-if __name__ == "__main__":
-    main()
+def json2hdf(infile, outfile):
+    pages, adjacency_list = json2graph(infile)
+    write_graph(outfile, pages, adjacency_list)
