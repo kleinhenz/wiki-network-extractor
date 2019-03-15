@@ -11,9 +11,14 @@ def run_json2hdf(args):
     wikinet.json2hdf(args.input, args.output)
 
 def main():
-    parser = argparse.ArgumentParser(description="tool for extracting network structure from wiki xml dumps")
+    parser = argparse.ArgumentParser(
+        prog=(os.path.basename(sys.executable) + " -m wikinet"),
+        description="tool for extracting network structure from wiki xml dumps"
+    )
 
-    subparsers = parser.add_subparsers(dest="cmd", required=True)
+    parser.set_defaults(func=lambda _: parser.print_help())
+
+    subparsers = parser.add_subparsers()
 
     xml2json_parser = subparsers.add_parser("xml2json")
     xml2json_parser.add_argument("input", help="zipped wiki xml dump to parse")
@@ -29,6 +34,4 @@ def main():
     args = parser.parse_args()
     args.func(args)
 
-# workaround for argparse usage string (see https://bugs.python.org/issue22240)
-sys.argv[0] = os.path.basename(sys.executable) + " -m wikinet"
 main()
