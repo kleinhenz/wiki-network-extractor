@@ -8,10 +8,9 @@ from xml.sax.saxutils import unescape
 
 from tqdm import tqdm
 
-nsmap = {"xmlns" : "http://www.mediawiki.org/xml/export-0.10/"}
 link_re = re.compile("(?:\\[\\[)(.+?)(?:[\\]|#])")
 
-def parse_page(page, out_f):
+def parse_page(page, out_f, nsmap):
     title = page.find("./xmlns:title", nsmap).text
     assert title is not None
 
@@ -31,13 +30,15 @@ def xml2json(infile, outfile, max_pages):
     with bz2.open(infile, "r") as wiki_f, open(outfile, "x") as out_f:
         tree = ET.iterparse(wiki_f, events=["start", "end"])
         _, root = next(tree)
+        ns = re.match("^{(.*?)}", root.tag).group(1) # extract namespace
+        nsmap = {"xmlns" : ns}
+        page_tag = "{{{xmlns}}}page".format(**nsmap)
 
         progress = tqdm(unit="pages")
 
-        page_tag = "{{{xmlns}}}page".format(**nsmap)
         for (event, elem) in tree:
             if event == "end" and elem.tag == page_tag:
-                parse_page(elem, out_f)
+                parse_page(elem, out_f, nsmap)
                 root.remove(elem)
                 npages = npages + 1
                 progress.update()
