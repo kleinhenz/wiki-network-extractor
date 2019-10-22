@@ -12,7 +12,7 @@ import h5py
 
 from tqdm import tqdm
 
-filter_title_re = re.compile("(?:Wikipedia:|:?Category:|:?File:|Media:|:?Image:|:?Template:|Draft:|Portal:|Module:|TimedText:|MediaWiki:|Help:)")
+filter_title_re = re.compile("(?:Wikipedia:|:?File:|Media:|:?Image:|:?Template:|Draft:|Portal:|Module:|TimedText:|MediaWiki:|Help:)")
 
 Page = namedtuple("Page", ["title", "length"])
 

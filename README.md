@@ -61,7 +61,7 @@ Second the first letter of a link is case insensitive unless the link is only a 
 The xml dumps contain many pages that are not normal articles such as files and help pages.
 These are filtered in `json2hdf` by checking page titles against the following python regex:
 ```
-re.compile("(?:Wikipedia:|:?Category:|:?File:|Media:|:?Image:|:?Template:|Draft:|Portal:|Module:|TimedText:|MediaWiki:|Help:)")
+re.compile("(?:Wikipedia:|:?File:|Media:|:?Image:|:?Template:|Draft:|Portal:|Module:|TimedText:|MediaWiki:|Help:)")
 ```
 
 ### Storage Format
