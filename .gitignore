@@ -1,2 +1,7 @@
 build/
 *.egg-info
+*.bz2
+*.json
+*.hdf5
+*.h5
+.python-version

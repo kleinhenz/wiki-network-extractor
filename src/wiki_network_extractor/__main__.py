@@ -2,18 +2,21 @@ import argparse
 import sys
 import os
 
-import wikinet
+from wiki_network_extractor import xml2json, json2hdf
+
 
 def run_xml2json(args):
-    wikinet.xml2json(args.input, args.output, args.n)
+    xml2json(args.input, args.output, args.n)
+
 
 def run_json2hdf(args):
-    wikinet.json2hdf(args.input, args.output)
+    json2hdf(args.input, args.output)
+
 
 def main():
     parser = argparse.ArgumentParser(
         prog=(os.path.basename(sys.executable) + " -m wikinet"),
-        description="tool for extracting network structure from wiki xml dumps"
+        description="tool for extracting network structure from wiki xml dumps",
     )
 
     parser.set_defaults(func=lambda _: parser.print_help())
@@ -33,5 +36,6 @@ def main():
 
     args = parser.parse_args()
     args.func(args)
+
 
 main()
