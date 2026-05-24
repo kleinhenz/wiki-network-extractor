@@ -1,5 +1,7 @@
 build/
 *.egg-info
+__pycache__/
+*.py[cod]
 *.bz2
 *.json
 *.hdf5

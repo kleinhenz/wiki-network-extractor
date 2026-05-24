@@ -4,13 +4,15 @@ wiki-network-extractor (`wikinet`) is a python module for extracting link networ
 ## Installation
 `pip install git+https://github.com/kleinhenz/wiki-network-extractor.git`
 
+This installs the `wikinet` command.
+
 ## Usage
 The following commands download and parse the latest xml dump of [simple english wikipedia](https://simple.wikipedia.org/wiki/Main_Page).
 This takes ~300MB of disk space and ~1 minute to parse.
 ```
 curl -L "https://dumps.wikimedia.org/simplewiki/latest/simplewiki-latest-pages-articles.xml.bz2" > simplewiki.xml.bz2
-python -m wikinet xml2json simplewiki.xml.bz2 simplewiki.json
-python -m wikinet json2hdf simplewiki.json simplewiki.h5
+wikinet xml2json simplewiki.xml.bz2 simplewiki.json
+wikinet json2hdf simplewiki.json simplewiki.h5
 ```
 This creates a hdf5 archive (`simplewiki.h5`) containing page titles, lengths (in characters) and the adjacency matrix of the link network in [CSR](https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_(CSR,_CRS_or_Yale_format)) format.
 The structure of the hdf5 archive is shown below (obtained from `h5dump -n 1 simplewiki.h5`).
@@ -38,7 +40,7 @@ FILE_CONTENTS {
 
 ### Two Stage Parsing
 Network extraction is done in two stages to optimize speed, memory, and disk space requirements.
-In the first, and slowest stage `xml2json` incrementally reads a (bzip2 compressed) xml dump, extracts all links from the text of each page using regex and produces a [newline delimited json](http://ndjson.org/) file where each line is a json object containing the title, length and links for a single page/redirect.
+In the first, and slowest stage `xml2json` incrementally reads a (bzip2 compressed) xml dump, extracts all links from the text of each page using regex and produces a [newline delimited json](http://ndjson.org/) file where each line is a json object containing the title, namespace id, length and links for a single page/redirect.
 In the second stage `json2hdf` reads the json file, applies filters, resolves all links and saves the results in a hdf5 archive.
 
 This two stage approach is used because in order to resolve links a complete list of all page titles and redirects must be available.
@@ -53,13 +55,14 @@ The target for each link is extracted in `xml2json` using the following python r
 
 ### Link Resolution
 Resolving links is a mostly straightforward process except for two details.
-First links can point to redirects that must be followed.
-Second the first letter of a link is case insensitive unless the link is only a single letter.
-`wikinet` takes care to handle both these details correctly by keeping track of all redirects and normalizing links.
+First links can point to redirects that must be followed, including redirect chains.
+Second, spaces and underscores are equivalent in page titles, and the first letter of a link is case insensitive unless the link is only a single letter.
+`wikinet` takes care to handle these details by keeping track of all redirects and normalizing links.
 
 ### Page Filtering
 The xml dumps contain many pages that are not normal articles such as files and help pages.
-These are filtered in `json2hdf` by checking page titles against the following python regex:
+These are filtered in `json2hdf` by keeping only namespace `0`, the main article namespace.
+For older ndjson files that do not include namespace ids, `json2hdf` falls back to checking page titles against the following python regex:
 ```
 re.compile("(?:Wikipedia:|:?File:|Media:|:?Image:|:?Template:|Draft:|Portal:|Module:|TimedText:|MediaWiki:|Help:)")
 ```

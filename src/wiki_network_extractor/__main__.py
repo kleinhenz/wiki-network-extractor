@@ -1,6 +1,4 @@
 import argparse
-import sys
-import os
 
 from wiki_network_extractor import xml2json, json2hdf
 
@@ -15,7 +13,7 @@ def run_json2hdf(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog=(os.path.basename(sys.executable) + " -m wikinet"),
+        prog="wikinet",
         description="tool for extracting network structure from wiki xml dumps",
     )
 
@@ -38,4 +36,5 @@ def main():
     args.func(args)
 
 
-main()
+if __name__ == "__main__":
+    main()
